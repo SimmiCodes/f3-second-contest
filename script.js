@@ -1,100 +1,150 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const signupPage = document.getElementById('signup-page');
-    const profilePage = document.getElementById('profile-page');
-    const logoutBtn = document.getElementById('logout-btn');
+document.addEventListener("DOMContentLoaded", function () {
+    const app = document.getElementById("app");
 
-   
-    const accessToken = localStorage.getItem('accessToken');
-    if (accessToken) {
-        showProfilePage();
+    
+    const isLoggedIn = localStorage.getItem("accessToken") !== null;
+
+    const isSignupPage = window.location.pathname.includes("signup.html");
+    const isProfilePage = window.location.pathname.includes("profile.html");
+
+    if (!isLoggedIn && isProfilePage) {
+        
+        redirectToSignup("You need to log in to access the Profile page.", "error");
+    } else if (isLoggedIn && isSignupPage) {
+       
+        redirectToProfile("You are already logged in. Redirecting to Profile page...", "info");
+    } else if (isLoggedIn) {
+        
+        renderProfilePage();
     } else {
-        showSignupPage();
+        
+        redirectToSignup();
     }
 
-    function showSignupPage() {
-        signupPage.style.display = 'block';
-        profilePage.style.display = 'none';
-        clearMessages();
+
+
+
+    function redirectToSignup(message = "", messageType = "") {
+        app.innerHTML = `
+            <div class="container">
+                 <h4>Welcome back!👋🏾<h4>
+                <h2>Sign up to your account</h2>
+                <form id="signupForm">
+                    <label for="username" class="inputclass">Your name</label><br>
+
+                    <input type="text" id="username" class="inputclass" required><br>
+
+                    <label for="useremail" class="inputclass">Your email</label><br>
+
+                    <input type="email" id="useremail" class="inputclass" required><br>
+
+                    <label for="password" class="inputclass">Password</label><br>
+
+                    <input type="password" id="password" class="inputclass" required><br>
+
+                    <label for="password" class="inputclass">Confirm Password</label><br>
+
+                    <input type="password" id="confirmpassword" class="inputclass" required><br>
+
+                    <button type="submit" class="inputclass" id="signupbutton">Continue</button>
+                </form>
+                <p id="signupMessage" class="${messageType}">${message}</p>
+
+            </div>
+        `;
+
+        const signupForm = document.getElementById("signupForm");
+        const signupMessage = document.getElementById("signupMessage");
+
+        signupForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const username = document.getElementById("username").value;
+            const useremail = document.getElementById("useremail").value;
+            const password = document.getElementById("password").value;
+            const confirmpassword = document.getElementById("confirmpassword").value;
+            
+            
+            const accessToken = generateAccessToken();
+
+            
+            localStorage.setItem("username", username);
+            localStorage.setItem("useremail", useremail);
+            localStorage.setItem("password", password); 
+            localStorage.setItem("accessToken", accessToken);
+
+            
+            signupMessage.textContent = "Signup successful!";
+            signupMessage.className = "success";
+            setTimeout(() => {
+                redirectToProfile("Signup successful! Redirecting to Profile page...", "success");
+
+                renderProfilePage();
+            }, 1000);
+        });
     }
 
-    function showProfilePage() {
-        signupPage.style.display = 'none';
-        profilePage.style.display = 'block';
-        displayUserProfile();
-        clearMessages();
+    function renderProfilePage() {
+        const username = localStorage.getItem("username");
+        const useremail = localStorage.getItem("useremail");
+        const password = localStorage.getItem("password");
+        app.innerHTML = `
+           <h2 id="text">Signup Successfully</h2>
+            <div class="container">
+
+                <h2 class="center">Profile</h2>
+                <p class="center">Full Name: ${username}</p>
+                <p class="center">Email:${useremail}</p>
+                <p class="center">Password: ${password}</p> 
+                <button id="logoutBtn">Logout</button>
+                
+            </div>
+        `;
+
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        logoutBtn.addEventListener("click", function () {
+            
+            localStorage.clear();
+           
+            redirectToSignup();
+        });
     }
+     
+    function redirectToProfile(message = "", messageType = "") {
+        app.innerHTML = `
+            <div class="container">
+                <h2 id="text">${message}</h2>
+                <h2 class="center">Profile</h2>
+                <div class="image-container">
+                <img src="./asset/Vectorcircle.png" alt="my pic">
+                <img src="./asset/Vectorvector.png" alt="my pic">
+                </div>
+                <p class="center">Full Name: ${username}</p>
+                <p class="center">Email:${useremail}</p>
+                <p class="center">Password: ${password}</p> 
+                <button id="logoutBtn">Logout</button>
+            </div>
+        `;
 
-    function displayUserProfile() {
-        const user = JSON.parse(localStorage.getItem('user'));
-        document.getElementById('user-name').innerText = user.name;
-        document.getElementById('user-email').innerText = user.email;
-    }
+        const logoutBtn = document.getElementById("logoutBtn");
 
-    function signup() {
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        
-        if (!name || !email || !password) {
-            showError('All fields are mandatory.');
-            return;
-        }
-
-
-        
-        const accessToken = generateAccessToken();
-
-        
-        const user = { name, email, accessToken };
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('accessToken', accessToken);
-
-        
-        showSuccess('Signup successful!');
-        clearSignupForm();
-        showProfilePage();
-    }
-
-    function logout() {
-        
-        localStorage.removeItem('user');
-        localStorage.removeItem('accessToken');
-        showSignupPage();
+        logoutBtn.addEventListener("click", function () {
+            
+            localStorage.clear();
+            
+            redirectToSignup();
+        });
     }
 
     function generateAccessToken() {
         
-        return Math.random().toString(36).substring(2, 18);
-    }
-
-    function showError(message) {
-        document.getElementById('error-message').innerText = message;
-    }
-
-    function showSuccess(message) {
-        document.getElementById('message').innerText = message;
-    }
-
-    function clearMessages() {
-        document.getElementById('message').innerText = '';
-        document.getElementById('error-message').innerText = '';
-    }
-
-    function clearSignupForm() {
-        document.getElementById('name').value = '';
-        document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
-        document.getElementById('password').value = '';
-    }
-
-    document.getElementById('signup-btn').addEventListener('click', signup);
-    logoutBtn.addEventListener('click', logout);
-
-
-    if (!accessToken && !window.location.href.includes('signup.html')) {
-        window.location.href = 'signup.html';
-    } else if (accessToken && window.location.href.includes('signup.html')) {
-        window.location.href = 'profile.html';
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let accessToken = "";
+        for (let i = 0; i < 16; i++) {
+            const randomIndex = Math.floor(Math.random() * charset.length);
+            accessToken += charset[randomIndex];
+        }
+        return accessToken;
     }
 });
